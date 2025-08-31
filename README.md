@@ -26,7 +26,7 @@ A Kanboard plugin that exports Gantt charts to HTML format for PDF printing with
 
 1. Navigate to any project with Gantt view
 2. Click project dropdown menu and select "Export Gantt Chart"
-3. Use browser print function (Ctrl+P) → "Print to PDF" → Landscape orientation
+3. Use browser print function (Ctrl+P) → "Print to PDF" → Landscape orientation → Enable "Background Graphics"
 
 ## Language Support
 
