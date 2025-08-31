@@ -50,3 +50,7 @@ A Kanboard plugin that exports Gantt charts to HTML format for PDF printing with
 ## Version
 
 1.0.0 - Professional Gantt export with multilingual support
+
+<img width="1300" height="808" alt="GanttExport" src="https://github.com/user-attachments/assets/46f293e1-a98b-4497-b8dd-7a7170a30b84" />
+
+
