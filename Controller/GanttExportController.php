@@ -77,6 +77,7 @@ class GanttExportController extends BaseController
     public function export()
     {
         $project_id = $this->request->getIntegerParam('project_id');
+        $hide_today = $this->request->getStringParam('hide_today') === '1';
         
         // Get project info
         $project = $this->projectModel->getById($project_id);
@@ -87,15 +88,7 @@ class GanttExportController extends BaseController
         }
         
         // Get tasks with dates
-        try {
-            $tasks = $this->getTasksWithDates($project_id);
-        } catch (Exception $e) {
-            $tasks = $this->db->table('tasks')
-                ->eq('project_id', $project_id)
-                ->neq('date_started', 0)
-                ->neq('date_due', 0)
-                ->findAll();
-        }
+        $tasks = $this->getTasksWithDates($project_id);
         
         $texts = $this->getLanguageTexts();
         
@@ -104,7 +97,7 @@ class GanttExportController extends BaseController
             exit();
         }
         
-        // Calculate date range - simplified
+        // Calculate date range
         $start_dates = array();
         $end_dates = array();
         foreach ($tasks as $task) {
@@ -113,9 +106,12 @@ class GanttExportController extends BaseController
         }
         $start_date = min($start_dates);
         $end_date = max($end_dates);
-        $total_days = ceil(($end_date - $start_date) / 86400) + 1;
+        // Use consistent integer days calculation throughout
+        $base_span_days = ceil(($end_date - $start_date) / 86400);
+        $actual_timeline_days = $base_span_days + 1; // Add 1 extra day for the blank marker
+        $total_days = $actual_timeline_days + 0.5;
         
-        echo $this->generateFullGanttHTML($project, $tasks, $start_date, $end_date, $total_days, $texts);
+        echo $this->generateFullGanttHTML($project, $tasks, $start_date, $end_date, $total_days, $texts, $hide_today, $actual_timeline_days);
         exit();
     }
     
@@ -139,55 +135,7 @@ class GanttExportController extends BaseController
             ->findAll();
     }
     
-    private function generateSimpleHTML($project, $tasks, $start_date, $end_date, $total_days)
-    {
-        $html = '<html><head><title>Gantt-diagram: ' . htmlspecialchars($project['name']) . '</title></head><body>
-        <h1>Gantt-diagram: ' . htmlspecialchars($project['name']) . '</h1>
-        <p>Eksportdato: ' . date('d.m.Y H:i') . '</p>
-        <p>Tidsperiode: ' . date('d.m.Y', $start_date) . ' - ' . date('d.m.Y', $end_date) . '</p>
-        
-        <table border="1" style="width:100%; border-collapse: collapse;">
-            <tr>
-                <th>Oppgave</th>
-                <th>Startdato</th> 
-                <th>Forfallsdato</th>
-                <th>Varighet</th>
-                <th>Tildelt</th>
-                <th>Status</th>
-            </tr>';
-        
-        foreach ($tasks as $task) {
-            $duration = ceil(($task['date_due'] - $task['date_started']) / 86400) + 1;
-            
-            // Get assignee name if owner_id exists
-            $assignee = 'Ikke tildelt';
-            if (!empty($task['owner_id'])) {
-                $user = $this->userModel->getById($task['owner_id']);
-                if (!empty($user['name'])) {
-                    $assignee = $user['name'];
-                }
-            }
-            
-            $status = $task['is_active'] ? 'Aktiv' : 'Fullført';
-            if ($task['is_active'] && $task['date_due'] < time()) {
-                $status = 'Forsinket';
-            }
-            
-            $html .= '<tr>
-                <td>' . htmlspecialchars($task['title']) . '</td>
-                <td>' . date('d.m.Y', $task['date_started']) . '</td>
-                <td>' . date('d.m.Y', $task['date_due']) . '</td>
-                <td>' . $duration . ' dager</td>
-                <td>' . htmlspecialchars($assignee) . '</td>
-                <td>' . $status . '</td>
-            </tr>';
-        }
-        
-        $html .= '</table></body></html>';
-        return $html;
-    }
-    
-    private function generateFullGanttHTML($project, $tasks, $start_date, $end_date, $total_days, $texts)
+    private function generateFullGanttHTML($project, $tasks, $start_date, $end_date, $total_days, $texts, $hide_today = false, $actual_timeline_days = null)
     {
         $html = '<!DOCTYPE html>
 <html>
@@ -199,7 +147,7 @@ class GanttExportController extends BaseController
         body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
         .project-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-        .gantt-container { margin: 30px 0; border: 1px solid #ddd; }
+        .gantt-container { margin: 30px 0; border: 1px solid #ddd; position: relative; }
         .gantt-header { border-bottom: 1px solid #ddd; }
         .gantt-row { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; align-items: center; min-height: 40px; }
         .task-name { width: 200px; padding: 0 10px; border-right: 1px solid #ddd; font-size: 11px; }
@@ -234,14 +182,31 @@ class GanttExportController extends BaseController
         </div>
         <div class="date-header" style="display: flex; border-bottom: 1px solid #ddd; background: #fafafa;">
             <div style="width: 200px; border-right: 1px solid #ddd; padding: 0 10px;"></div>
-            <div style="flex: 1; position: relative; padding: 0 10px;">' . $this->generateDateMarkers($start_date, $end_date, $total_days, $texts) . '</div>
+            <div style="flex: 1; position: relative; padding: 0 10px;">' . $this->generateDateMarkers($start_date, $end_date, $total_days, $texts, $hide_today, $actual_timeline_days) . '</div>
         </div>';
         
         foreach ($tasks as $task) {
-            $html .= $this->generateTaskRow($task, $start_date, $total_days, $texts);
+            $html .= $this->generateTaskRow($task, $start_date, $total_days, $texts, $hide_today, $actual_timeline_days);
         }
         
         $html .= '</div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var ganttContainer = document.querySelector(".gantt-container");
+            var ganttHeight = ganttContainer.offsetHeight;
+            var dateLines = document.querySelectorAll(".date-marker-line");
+            var todayLines = document.querySelectorAll(".today-line");
+            
+            dateLines.forEach(function(line) {
+                line.style.height = (ganttHeight - 58) + "px";
+            });
+            
+            todayLines.forEach(function(line) {
+                line.style.height = (ganttHeight - 65) + "px";
+            });
+        });
+    </script>
     
     <table>
         <thead>
@@ -279,7 +244,7 @@ class GanttExportController extends BaseController
             $html .= '<tr>
                 <td>' . htmlspecialchars($task['title']) . '</td>
                 <td>' . date('d.m.Y', $task['date_started']) . '</td>
-                <td>' . date('d.m.Y H:i', $task['date_due']) . '</td>
+                <td>' . date('d.m.Y', $task['date_due']) . '</td>
                 <td>' . $duration . ' ' . $texts['days'] . '</td>
                 <td>' . htmlspecialchars($assignee) . '</td>
                 <td>' . $estimated_hours . '</td>
@@ -312,7 +277,7 @@ class GanttExportController extends BaseController
         return $html;
     }
     
-    private function generateTaskRow($task, $start_date, $total_days, $texts)
+    private function generateTaskRow($task, $start_date, $total_days, $texts, $hide_today = false, $actual_timeline_days = null)
     {
         $task_start = $task['date_started'];
         $task_end = $task['date_due'];
@@ -320,7 +285,7 @@ class GanttExportController extends BaseController
         $days_from_start = ($task_start - $start_date) / 86400;
         $task_duration = ($task_end - $task_start) / 86400;
         
-        $left_percent = ($days_from_start / $total_days) * 100;
+        $left_percent = ($days_from_start / $total_days) * 100; // Use full width for task bars
         $width_percent = ($task_duration / $total_days) * 100;
         
         $status_class = 'active';
@@ -332,15 +297,8 @@ class GanttExportController extends BaseController
         
         $task_name = $task['title'];
         
-        
-        // Calculate today line for this row
+        // No today line in task rows - only in header
         $today_line = '';
-        $today = time();
-        if ($today >= $start_date && $today <= ($start_date + ($total_days * 86400))) {
-            $days_from_start_today = ($today - $start_date) / 86400;
-            $today_percent = ($days_from_start_today / $total_days) * 100;
-            $today_line = '<div style="position: absolute; left: ' . $today_percent . '%; top: 0; bottom: 0; width: 2px; border-left: 3px dotted #000; z-index: 5;"></div>';
-        }
         
         return '<div class="gantt-row">
             <div class="task-name">' . htmlspecialchars($task_name) . '</div>
@@ -353,10 +311,67 @@ class GanttExportController extends BaseController
         </div>';
     }
     
-    private function generateDateMarkers($start_date, $end_date, $total_days, $texts)
+    private function calculateDynamicMarkers($start_date, $end_date, $total_days)
+    {
+        $markers = [];
+        $actual_days = ceil(($end_date - $start_date) / 86400);
+        
+        if ($actual_days > 365) {
+            // More than a year - show monthly markers (1st of each month)
+            $current = mktime(0, 0, 0, date('n', $start_date), 1, date('Y', $start_date));
+            if ($current < $start_date) {
+                $current = mktime(0, 0, 0, date('n', $start_date) + 1, 1, date('Y', $start_date));
+            }
+            
+            while ($current < $end_date) {
+                if ($current > $start_date) {
+                    $markers[] = [
+                        'timestamp' => $current,
+                        'label' => date('M Y', $current)
+                    ];
+                }
+                $current = mktime(0, 0, 0, date('n', $current) + 1, 1, date('Y', $current));
+            }
+        } elseif ($actual_days > 30) {
+            // More than a month - show weekly markers (Mondays)
+            $current = $start_date;
+            
+            // Find first Monday after start date
+            while (date('N', $current) != 1 && $current < $end_date) {
+                $current += 86400;
+            }
+            
+            while ($current < $end_date) {
+                if ($current > $start_date) {
+                    $markers[] = [
+                        'timestamp' => $current,
+                        'label' => date('j M', $current)
+                    ];
+                }
+                $current += (7 * 86400); // Add 7 days for next Monday
+            }
+        } else {
+            // 30 days or less - show daily markers (exclude start and end dates)
+            $base_span_days = ceil(($end_date - $start_date) / 86400);
+            for ($i = 1; $i < $base_span_days; $i++) {
+                $marker_date = $start_date + ($i * 86400);
+                $markers[] = [
+                    'timestamp' => $marker_date,
+                    'label' => date('j M', $marker_date)
+                ];
+            }
+        }
+        
+        return $markers;
+    }
+    
+    private function generateDateMarkers($start_date, $end_date, $total_days, $texts, $hide_today = false, $actual_timeline_days = null)
     {
         $html = '';
         
+        // Add start date marker with line
+        $html .= '<div style="position: absolute; left: 0%; top: 2px; font-size: 9px; color: #666; z-index: 2;">' . date('j M', $start_date) . '</div>';
+        $html .= '<div class="date-marker-line" style="position: absolute; left: 0%; top: 20px; width: 1px; background: #e0e0e0; z-index: 1;"></div>';
         
         // Dynamic date markers based on timeline length
         $markers = $this->calculateDynamicMarkers($start_date, $end_date, $total_days);
@@ -364,25 +379,33 @@ class GanttExportController extends BaseController
         foreach ($markers as $marker) {
             $marker_date = $marker['timestamp'];
             $days_from_start = ($marker_date - $start_date) / 86400;
-            $percent = ($days_from_start / $total_days) * 100;
+            $percent = ($days_from_start / $actual_timeline_days) * 100; // Use actual timeline days for proper spacing
             $date_label = $marker['label'];
             
-            $html .= '<div style="position: absolute; left: ' . $percent . '%; top: 2px; font-size: 9px; color: #666; white-space: nowrap; text-align: center; z-index: 2;">' . $date_label . '</div>';
-            $html .= '<div style="position: absolute; left: ' . $percent . '%; top: 20px; bottom: 0; width: 1px; background: #e0e0e0; z-index: 2;"></div>';
+            $html .= '<div style="position: absolute; left: ' . $percent . '%; top: 2px; font-size: 9px; color: #666; white-space: nowrap; text-align: center; transform: translateX(-50%); z-index: 2.">' . $date_label . '</div>';
+            $html .= '<div class="date-marker-line" style="position: absolute; left: ' . $percent . '%; top: 20px; width: 1px; background: #e0e0e0; z-index: 1;"></div>';
         }
         
-        $html .= '<div style="position: absolute; left: 0%; top: 2px; font-size: 9px; color: #333; font-weight: bold; z-index: 2;">' . $this->getLocalizedDate($start_date, $texts) . '</div>';
+        // Add end date marker with line at integer day position (show day after end date)
+        $base_span_days = ceil(($end_date - $start_date) / 86400);
+        $end_percent = ($base_span_days / $actual_timeline_days) * 100;
+        $day_after_end = $end_date + 86400; // Add one day
+        $html .= '<div style="position: absolute; left: ' . $end_percent . '%; top: 2px; font-size: 9px; color: #666; transform: translateX(-50%); z-index: 2;">' . date('j M', $day_after_end) . '</div>';
+        $html .= '<div class="date-marker-line" style="position: absolute; left: ' . $end_percent . '%; top: 20px; width: 1px; background: #e0e0e0; z-index: 1;"></div>';
         
-        $html .= '<div style="position: absolute; left: 0%; top: 20px; bottom: 0; width: 2px; background: #333; z-index: 2;"></div>';
-        $html .= '<div style="position: absolute; left: 100%; top: 20px; bottom: 0; width: 2px; background: #333; z-index: 2;"></div>';
+        // Add blank marker line one day after end date (no text)
+        $blank_percent = (($base_span_days + 1) / $actual_timeline_days) * 100;
+        $html .= '<div class="date-marker-line" style="position: absolute; left: ' . $blank_percent . '%; top: 20px; width: 1px; background: #e0e0e0; z-index: 1;"></div>';
         
-        // Add today indicator line if today is within the timeline
-        $today = time();
-        if ($today >= $start_date && $today <= $end_date) {
-            $days_from_start_today = ($today - $start_date) / 86400;
-            $today_percent = ($days_from_start_today / $total_days) * 100;
-            $html .= '<div style="position: absolute; left: ' . $today_percent . '%; top: 22px; bottom: 18px; width: 2px; border-left: 3px dotted #000; z-index: 10;"></div>';
-            $html .= '<div style="position: absolute; left: ' . $today_percent . '%; bottom: 2px; font-size: 8px; color: #000; font-weight: bold; transform: translateX(-50%); background: white; padding: 1px 3px; border: 1px solid #000;">' . $texts['today'] . '</div>';
+        // Add today indicator line if today is within the timeline and not hidden
+        if (!$hide_today) {
+            $today = time();
+            if ($today >= $start_date && $today <= $end_date) {
+                $days_from_start_today = ($today - $start_date) / 86400;
+                $today_percent = ($days_from_start_today / $actual_timeline_days) * 100; // Use actual timeline days for proper positioning
+                $html .= '<div class="today-line" style="position: absolute; left: ' . $today_percent . '%; top: 26px; width: 2px; border-left: 2px dashed #000; z-index: 10;"></div>';
+                $html .= '<div style="position: absolute; left: ' . $today_percent . '%; bottom: 2px; font-size: 8px; color: #000; font-weight: bold; transform: translateX(-50%); background: white; padding: 1px 3px; border: 1px solid #000; z-index: 11;">' . $texts['today'] . '</div>';
+            }
         }
         
         return '<div style="position: relative; height: 25px; padding: 5px 0; border-bottom: 1px solid #ccc; background: #fafafa;">' . $html . '</div>';
@@ -424,67 +447,5 @@ class GanttExportController extends BaseController
                 </div>
             </div>
         </div>';
-    }
-    
-    private function calculateDynamicMarkers($start_date, $end_date, $total_days)
-    {
-        $markers = [];
-        
-        if ($total_days > 365) {
-            // More than a year - show monthly markers (1st of each month)
-            $current = mktime(0, 0, 0, date('n', $start_date), 1, date('Y', $start_date));
-            if ($current < $start_date) {
-                $current = mktime(0, 0, 0, date('n', $start_date) + 1, 1, date('Y', $start_date));
-            }
-            
-            while ($current < $end_date) {
-                if ($current > $start_date) {
-                    $markers[] = [
-                        'timestamp' => $current,
-                        'label' => date('M Y', $current)
-                    ];
-                }
-                $current = mktime(0, 0, 0, date('n', $current) + 1, 1, date('Y', $current));
-            }
-        } elseif ($total_days > 30) {
-            // More than a month - show weekly markers (Mondays)
-            $current = $start_date;
-            
-            // Find first Monday after start date
-            while (date('N', $current) != 1 && $current < $end_date) {
-                $current += 86400;
-            }
-            
-            while ($current < $end_date) {
-                if ($current > $start_date) {
-                    $markers[] = [
-                        'timestamp' => $current,
-                        'label' => date('j M', $current)
-                    ];
-                }
-                $current += (7 * 86400); // Add 7 days for next Monday
-            }
-        } else {
-            // 30 days or less - show daily markers (skip start/end to avoid duplicates)
-            for ($i = 1; $i < $total_days; $i++) {
-                $marker_date = $start_date + ($i * 86400);
-                $markers[] = [
-                    'timestamp' => $marker_date,
-                    'label' => date('j M', $marker_date)
-                ];
-            }
-        }
-        
-        return $markers;
-    }
-    
-    private function getLocalizedDate($timestamp, $texts)
-    {
-        $months = $texts['months'];
-        
-        $day = date('j', $timestamp);
-        $month = $months[(int)date('n', $timestamp) - 1]; // Array is 0-indexed
-        
-        return $day . '. ' . $month;
     }
 }

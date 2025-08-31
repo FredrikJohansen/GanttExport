@@ -1,18 +1,17 @@
 # Kanboard Gantt Export Plugin
 
-A Kanboard plugin that exports Gantt charts to HTML format for PDF printing with professional visual representation.
+Exports Gantt charts to HTML format for PDF printing.
 
 ## Features
 
-- Visual Gantt timeline with proportional task bars
-- Today indicator with dotted line
-- Project summary with task statistics and progress bar
+- Visual Gantt timeline with task bars
+- Dynamic date markers (daily/weekly/monthly based on timeline length)
+- Optional today indicator line
+- Project summary with task statistics
 - Time tracking information (estimated vs actual hours)
-- Dynamic timeline markers (daily/weekly/monthly based on timeline length)
-- Multilingual support (Norwegian/English based on user language)
-- Color-coded task status (completed, active, overdue)
-- Comprehensive task details table
-- Print-optimized layout
+- Task details table
+- Multilingual support (Norwegian/English)
+- Two export options (with or without today line)
 
 ## Requirements
 
@@ -20,37 +19,46 @@ A Kanboard plugin that exports Gantt charts to HTML format for PDF printing with
 
 ## Installation
 
-1. Extract to your Kanboard `plugins` directory as `GanttExport`
+1. Extract to your Kanboard `plugins/` directory as `GanttExport`
 
 ## Usage
 
-1. Navigate to any project with Gantt view
-2. Click project dropdown menu and select "Export Gantt Chart"
-3. Use browser print function (Ctrl+P) → "Print to PDF" → Landscape orientation → Enable "Background Graphics"
-
-## Language Support
-
-- **Norwegian**: Automatically used for Norwegian language users
-- **English**: Default for all other languages
-- Language detection based on user's Kanboard language setting
+1. Navigate to any project
+2. Open the project dropdown menu
+3. Select "Export Gantt Chart" or "Export Gantt Chart (No Today Line)"
+4. Use browser print function (Ctrl+P) → Save as PDF → Landscape orientation → Enable "Background Graphics"
 
 ## Export Includes
 
-- **Visual Timeline**: Adaptive date markers with proportional task bars and today indicator
-- **Project Summary**: Task count, completion percentage, and progress statistics  
-- **Task Table**: Names, dates, duration, assignees, time estimates, and status
-- **Legend**: Color coding explanation
+- Visual timeline with task bars
+- Project summary with task count and progress
+- Task table with names, dates, duration, assignees, time estimates, and status
+- Color legend (Green: completed, Blue: active, Red: overdue)
 
-## Color Coding
+## Language Support
 
-- **Green**: Completed tasks
-- **Blue**: Active tasks
-- **Red**: Overdue tasks
+- Norwegian: Used for Norwegian language users
+- English: Default for all other languages
 
 ## Version
 
-1.0.0 - Professional Gantt export with multilingual support
-
-<img width="1300" height="808" alt="GanttExport" src="https://github.com/user-attachments/assets/46f293e1-a98b-4497-b8dd-7a7170a30b84" />
+1.1.0
 
 
+
+
+## Changelog v1.0.0 → v1.1.0
+
+  Improvements:
+  - Fixed date marker spacing to ensure exactly one day gaps between consecutive dates
+  - Added toggleable today line with two export options (with/without today indicator)
+  - Extended timeline with visual padding after end date for better appearance
+  - Improved today line positioning to prevent overlap with text labels
+  - Added dynamic line height calculation that adapts to number of tasks
+  - Enhanced date calculations for consistent positioning across all timeline elements
+
+  Technical fixes:
+  - Corrected end date positioning and duplicate date labels
+  - Added JavaScript for responsive line height adjustment
+
+  The main focus was fixing visual spacing issues and adding functionality to export with or without a today indactor line.
