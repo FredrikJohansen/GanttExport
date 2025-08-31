@@ -36,7 +36,7 @@ class Plugin extends Base
 
     public function getPluginAuthor()
     {
-        return 'Claude Code Assistant';
+        return 'Fredrik M. Johansen';
     }
 
     public function getPluginVersion()
