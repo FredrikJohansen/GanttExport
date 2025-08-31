@@ -2,7 +2,10 @@
 
 Exports Gantt charts to HTML format for PDF printing.
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c394d414-4d37-46f9-99e5-2fb66b2798d8" />
+Examples with and without "TODAY" indicator
+<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/c394d414-4d37-46f9-99e5-2fb66b2798d8" />
+<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/af3ecd2a-736d-46de-aa04-1fd26162a363" />
+
 
 
 ## Features
