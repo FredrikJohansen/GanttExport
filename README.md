@@ -52,7 +52,6 @@ Examples with and without "TODAY" indicator
 
 
 
-
 ## Changelog v1.0.0 → v1.1.0
 
   Improvements:
@@ -68,3 +67,7 @@ Examples with and without "TODAY" indicator
   - Added JavaScript for responsive line height adjustment
 
   The main focus was fixing visual spacing issues and adding functionality to export with or without a today indactor line.
+
+
+---
+  This project was developed with assistance from AI tools
