@@ -17,12 +17,10 @@ A Kanboard plugin that exports Gantt charts to HTML format for PDF printing with
 ## Requirements
 
 - Kanboard >= 1.0.37
-- Gantt plugin by Frédéric Guillot installed and activated
 
 ## Installation
 
 1. Extract to your Kanboard `plugins` directory as `GanttExport`
-2. Go to Settings > Plugins in Kanboard and activate "Gantt Export"
 
 ## Usage
 
