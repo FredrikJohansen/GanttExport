@@ -3,8 +3,8 @@
 Exports Gantt charts to HTML format for PDF printing.
 
 Examples with and without "TODAY" indicator
-<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/c394d414-4d37-46f9-99e5-2fb66b2798d8" />
-<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/af3ecd2a-736d-46de-aa04-1fd26162a363" />
+<img width="1280" height="720" alt="GE111" src="https://github.com/user-attachments/assets/caf3f3c2-e7b0-48b3-9c7d-24b607ffeb3b" />
+<img width="1280" height="720" alt="GE111T" src="https://github.com/user-attachments/assets/d48498bd-7f07-44a3-9e1b-c2ed74d0db2f" />
 
 
 
@@ -48,8 +48,7 @@ Examples with and without "TODAY" indicator
 
 ## Version
 
-1.1.0
-
+1.1.1
 
 
 ## Changelog v1.0.0 → v1.1.0
