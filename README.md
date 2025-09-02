@@ -62,11 +62,18 @@ Examples with and without "TODAY" indicator
   - Added dynamic line height calculation that adapts to number of tasks
   - Enhanced date calculations for consistent positioning across all timeline elements
 
-  Technical fixes:
+  Fixes:
   - Corrected end date positioning and duplicate date labels
   - Added JavaScript for responsive line height adjustment
 
   The main focus was fixing visual spacing issues and adding functionality to export with or without a today indactor line.
+
+
+## Changelog v1.1.0 → v1.1.1
+
+  Fixes:
+  - Fixed task bar alignment - task bars now align perfectly with date markers on the timeline
+  - Fixed page break issues when printing to PDF - tasks will no longer be split across multiple pages
 
 
 ---
