@@ -149,7 +149,7 @@ class GanttExportController extends BaseController
         .project-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
         .gantt-container { margin: 30px 0; border: 1px solid #ddd; position: relative; }
         .gantt-header { border-bottom: 1px solid #ddd; }
-        .gantt-row { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; align-items: center; min-height: 40px; }
+        .gantt-row { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; align-items: center; min-height: 40px; page-break-inside: avoid; }
         .task-name { width: 200px; padding: 0 10px; border-right: 1px solid #ddd; font-size: 11px; }
         .task-timeline { flex: 1; position: relative; height: 30px; margin: 0 10px; overflow: visible; }
         .task-bar { position: absolute; height: 25px; border-radius: 4px; color: white; font-size: 10px; font-weight: bold; display: flex; align-items: center; padding-left: 8px; }
@@ -158,6 +158,7 @@ class GanttExportController extends BaseController
         .task-bar.overdue { background: #F44336; }
         table { width: 100%; border-collapse: collapse; margin-top: 30px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 11px; }
+        tr { page-break-inside: avoid; }
         th { background: #f5f5f5; font-weight: bold; }
         .legend { margin-top: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; }
         .legend-item { display: inline-block; margin-right: 20px; }
@@ -285,8 +286,8 @@ class GanttExportController extends BaseController
         $days_from_start = ($task_start - $start_date) / 86400;
         $task_duration = ($task_end - $task_start) / 86400;
         
-        $left_percent = ($days_from_start / $total_days) * 100; // Use full width for task bars
-        $width_percent = ($task_duration / $total_days) * 100;
+        $left_percent = ($days_from_start / $actual_timeline_days) * 100; // Use same reference as date markers
+        $width_percent = ($task_duration / $actual_timeline_days) * 100;
         
         $status_class = 'active';
         if ($task['is_active'] == 0) {
