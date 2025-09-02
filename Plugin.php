@@ -46,7 +46,7 @@ class Plugin extends Base
 
     public function getPluginHomepage()
     {
-        return 'https://github.com/claude-code/kanboard-gantt-export';
+        return 'https://github.com/FredrikJohansen/GanttExport';
     }
 
     public function getCompatibleVersion()
