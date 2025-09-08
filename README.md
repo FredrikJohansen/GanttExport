@@ -16,7 +16,7 @@ Examples with and without "TODAY" indicator
 - Project summary with task statistics
 - Time tracking information (estimated vs actual hours)
 - Task details table
-- Multilingual support (Norwegian/English)
+- Multilingual support (English/Norwegian/German)
 - Two export options (with or without today line)
 
 ## Requirements
@@ -44,6 +44,7 @@ Examples with and without "TODAY" indicator
 ## Language Support
 
 - Norwegian: Used for Norwegian language users
+- German: Used for German language users
 - English: Default for all other languages
 
 ## Version
@@ -73,6 +74,18 @@ Examples with and without "TODAY" indicator
   Fixes:
   - Fixed task bar alignment - task bars now align perfectly with date markers on the timeline
   - Fixed page break issues when printing to PDF - tasks will no longer be split across multiple pages
+
+
+## Changelog v1.1.1 → v1.2.0
+
+  Improvements:
+  - Include all tasks: Tasks without start/due dates now use creation/completion dates
+  - Changed "Today" to "NOW" indicator throughout the interface (more accurate description)
+  - Added German language support
+  - Added totals footer row showing total estimated hours, time spent, and duration
+  Fixes:
+  - Fixed time spent calculation (was always showing 0)
+  - Improved task bar end position alignment
 
 
 ---
