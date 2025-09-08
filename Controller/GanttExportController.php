@@ -10,6 +10,7 @@ class GanttExportController extends BaseController
     {
         $current_language = $this->languageModel->getCurrentLanguage();
         $is_norwegian = (strpos($current_language, 'nb') === 0 || strpos($current_language, 'no') === 0 || $current_language === 'norwegian');
+        $is_german = (strpos($current_language, 'de') === 0 || $current_language === 'german');
         
         if ($is_norwegian) {
             return [
@@ -37,9 +38,39 @@ class GanttExportController extends BaseController
                 'overdue_tasks' => 'Forsinkede oppgaver',
                 'total_tasks' => 'Totale oppgaver',
                 'progress' => 'Fremdrift',
-                'today' => 'I DAG',
-                'no_tasks_found' => 'Ingen oppgaver med datoer funnet',
+                'today' => 'NÅ',
+                'no_tasks_found' => 'Ingen oppgaver funnet',
                 'months' => ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des']
+            ];
+        } elseif ($is_german) {
+            return [
+                'gantt_chart' => 'Gantt-Diagramm',
+                'export_date' => 'Exportdatum',
+                'time_period' => 'Zeitraum',
+                'task' => 'Aufgabe',
+                'timeline' => 'Zeitachse',
+                'task_name' => 'Aufgabenname',
+                'start_date' => 'Startdatum',
+                'due_date' => 'Fälligkeitsdatum',
+                'duration' => 'Dauer',
+                'assigned' => 'Zugewiesen',
+                'estimate' => 'Schätzung (h)',
+                'time_spent' => 'Zeitaufwand (h)',
+                'status' => 'Status',
+                'not_assigned' => 'Nicht zugewiesen',
+                'active' => 'Aktiv',
+                'completed' => 'Abgeschlossen',
+                'overdue' => 'Überfällig',
+                'days' => 'Tage',
+                'explanation' => 'Legende',
+                'completed_tasks' => 'Abgeschlossene Aufgaben',
+                'active_tasks' => 'Aktive Aufgaben',
+                'overdue_tasks' => 'Überfällige Aufgaben',
+                'total_tasks' => 'Gesamtaufgaben',
+                'progress' => 'Fortschritt',
+                'today' => 'JETZT',
+                'no_tasks_found' => 'Keine Aufgaben gefunden',
+                'months' => ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
             ];
         } else {
             return [
@@ -67,8 +98,8 @@ class GanttExportController extends BaseController
                 'overdue_tasks' => 'Overdue tasks',
                 'total_tasks' => 'Total tasks',
                 'progress' => 'Progress',
-                'today' => 'TODAY',
-                'no_tasks_found' => 'No tasks with dates found',
+                'today' => 'NOW',
+                'no_tasks_found' => 'No tasks found',
                 'months' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             ];
         }
@@ -97,12 +128,25 @@ class GanttExportController extends BaseController
             exit();
         }
         
-        // Calculate date range
+        // Calculate date range including creation and completion dates
         $start_dates = array();
         $end_dates = array();
+        $current_time = time();
+        
         foreach ($tasks as $task) {
-            $start_dates[] = $task['date_started'];
-            $end_dates[] = $task['date_due'];
+            // Use start date or creation date
+            $task_start = !empty($task['date_started']) ? $task['date_started'] : $task['date_creation'];
+            $start_dates[] = $task_start;
+            
+            // Use due date, completion date, or current time
+            if (!empty($task['date_due'])) {
+                $end_dates[] = $task['date_due'];
+            } elseif (!empty($task['date_completed']) && $task['is_active'] == 0) {
+                $end_dates[] = $task['date_completed'];
+            } else {
+                // Active task with no due date - extend to current time
+                $end_dates[] = $current_time;
+            }
         }
         $start_date = min($start_dates);
         $end_date = max($end_dates);
@@ -123,15 +167,15 @@ class GanttExportController extends BaseController
                 'tasks.title',
                 'tasks.date_started',
                 'tasks.date_due',
+                'tasks.date_creation',
+                'tasks.date_completed',
                 'tasks.is_active',
                 'tasks.owner_id',
                 'tasks.time_estimated',
                 'tasks.time_spent'
             )
             ->eq('project_id', $project_id)
-            ->neq('date_started', 0)
-            ->neq('date_due', 0)
-            ->orderBy('date_started', 'ASC')
+            ->orderBy('date_creation', 'ASC')
             ->findAll();
     }
     
@@ -152,7 +196,7 @@ class GanttExportController extends BaseController
         .gantt-row { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; align-items: center; min-height: 40px; page-break-inside: avoid; }
         .task-name { width: 200px; padding: 0 10px; border-right: 1px solid #ddd; font-size: 11px; }
         .task-timeline { flex: 1; position: relative; height: 30px; margin: 0 10px; overflow: visible; }
-        .task-bar { position: absolute; height: 25px; border-radius: 4px; color: white; font-size: 10px; font-weight: bold; display: flex; align-items: center; padding-left: 8px; }
+        .task-bar { position: absolute; height: 25px; border-radius: 4px; color: white; font-size: 10px; font-weight: bold; display: flex; align-items: center; padding-left: 4px; box-sizing: border-box; }
         .task-bar.completed { background: #4CAF50; }
         .task-bar.active { background: #2196F3; }
         .task-bar.overdue { background: #F44336; }
@@ -225,7 +269,17 @@ class GanttExportController extends BaseController
         <tbody>';
         
         foreach ($tasks as $task) {
-            $duration = ceil(($task['date_due'] - $task['date_started']) / 86400);
+            // Calculate dates and duration using same logic as task bars
+            $task_start = !empty($task['date_started']) ? $task['date_started'] : $task['date_creation'];
+            if (!empty($task['date_due'])) {
+                $task_end = $task['date_due'];
+            } elseif (!empty($task['date_completed']) && $task['is_active'] == 0) {
+                $task_end = $task['date_completed'];
+            } else {
+                $task_end = time();
+            }
+            
+            $duration = ceil(($task_end - $task_start) / 86400);
             $assignee = $texts['not_assigned'];
             if (!empty($task['owner_id'])) {
                 $user = $this->userModel->getById($task['owner_id']);
@@ -234,18 +288,18 @@ class GanttExportController extends BaseController
                 }
             }
             $status = $task['is_active'] ? $texts['active'] : $texts['completed'];
-            if ($task['is_active'] && $task['date_due'] < time()) {
+            if ($task['is_active'] && !empty($task['date_due']) && $task['date_due'] < time()) {
                 $status = $texts['overdue'];
             }
             
-            // Display time values (Kanboard stores estimates in hours, time spent in seconds)
+            // Display time values (Kanboard stores both estimates and time spent in hours)
             $estimated_hours = !empty($task['time_estimated']) ? $task['time_estimated'] : '-';
-            $spent_hours = !empty($task['time_spent']) ? round($task['time_spent'] / 3600, 1) : '-';
+            $spent_hours = ($task['time_spent'] > 0) ? $task['time_spent'] : '-';
             
             $html .= '<tr>
                 <td>' . htmlspecialchars($task['title']) . '</td>
-                <td>' . date('d.m.Y', $task['date_started']) . '</td>
-                <td>' . date('d.m.Y', $task['date_due']) . '</td>
+                <td>' . date('d.m.Y', $task_start) . '</td>
+                <td>' . date('d.m.Y', $task_end) . '</td>
                 <td>' . $duration . ' ' . $texts['days'] . '</td>
                 <td>' . htmlspecialchars($assignee) . '</td>
                 <td>' . $estimated_hours . '</td>
@@ -254,7 +308,39 @@ class GanttExportController extends BaseController
             </tr>';
         }
         
-        $html .= '</tbody></table>
+        // Calculate totals
+        $total_estimated = 0;
+        $total_spent = 0;
+        $total_duration = 0;
+        
+        foreach ($tasks as $task) {
+            $task_start = !empty($task['date_started']) ? $task['date_started'] : $task['date_creation'];
+            if (!empty($task['date_due'])) {
+                $task_end = $task['date_due'];
+            } elseif (!empty($task['date_completed']) && $task['is_active'] == 0) {
+                $task_end = $task['date_completed'];
+            } else {
+                $task_end = time();
+            }
+            
+            $total_duration += ceil(($task_end - $task_start) / 86400);
+            $total_estimated += !empty($task['time_estimated']) ? $task['time_estimated'] : 0;
+            $total_spent += ($task['time_spent'] > 0) ? $task['time_spent'] : 0;
+        }
+        
+        $html .= '<tfoot>
+            <tr style="font-weight: bold; background: #f0f0f0;">
+                <td>Total</td>
+                <td>-</td>
+                <td>-</td>
+                <td>' . $total_duration . ' ' . $texts['days'] . '</td>
+                <td>-</td>
+                <td>' . ($total_estimated > 0 ? $total_estimated : '-') . '</td>
+                <td>' . ($total_spent > 0 ? $total_spent : '-') . '</td>
+                <td>-</td>
+            </tr>
+        </tfoot>
+        </tbody></table>
     
     <div class="legend">
         <strong>' . $texts['explanation'] . ':</strong>
@@ -280,14 +366,32 @@ class GanttExportController extends BaseController
     
     private function generateTaskRow($task, $start_date, $total_days, $texts, $hide_today = false, $actual_timeline_days = null)
     {
-        $task_start = $task['date_started'];
-        $task_end = $task['date_due'];
+        // Use start date or creation date
+        $task_start = !empty($task['date_started']) ? $task['date_started'] : $task['date_creation'];
+        
+        // Use due date, completion date, or current time
+        if (!empty($task['date_due'])) {
+            $task_end = $task['date_due'];
+        } elseif (!empty($task['date_completed']) && $task['is_active'] == 0) {
+            $task_end = $task['date_completed'];
+        } else {
+            // Active task with no due date - extend to current time
+            $task_end = time();
+        }
         
         $days_from_start = ($task_start - $start_date) / 86400;
         $task_duration = ($task_end - $task_start) / 86400;
         
-        $left_percent = ($days_from_start / $actual_timeline_days) * 100; // Use same reference as date markers
-        $width_percent = ($task_duration / $actual_timeline_days) * 100;
+        // Ensure minimum duration of 0.1 days for visibility
+        if ($task_duration < 0.1) {
+            $task_duration = 0.1;
+        }
+        
+        // Use exact same calculation method as date markers for perfect alignment
+        $days_to_end = ($task_end - $start_date) / 86400;
+        $left_percent = ($days_from_start / $actual_timeline_days) * 100;
+        $end_percent = ($days_to_end / $actual_timeline_days) * 100;
+        $width_percent = $end_percent - $left_percent;
         
         $status_class = 'active';
         if ($task['is_active'] == 0) {
