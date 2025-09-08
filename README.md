@@ -2,7 +2,7 @@
 
 Exports Gantt charts to HTML format for PDF printing.
 
-Examples with and without "TODAY" indicator
+Examples with and without "NOW" indicator
 <img width="1280" height="720" alt="GE111" src="https://github.com/user-attachments/assets/caf3f3c2-e7b0-48b3-9c7d-24b607ffeb3b" />
 <img width="1280" height="720" alt="GE111T" src="https://github.com/user-attachments/assets/d48498bd-7f07-44a3-9e1b-c2ed74d0db2f" />
 
@@ -12,12 +12,12 @@ Examples with and without "TODAY" indicator
 
 - Visual Gantt timeline with task bars
 - Dynamic date markers (daily/weekly/monthly based on timeline length)
-- Optional today indicator line
+- Optional NOW indicator line
 - Project summary with task statistics
 - Time tracking information (estimated vs actual hours)
 - Task details table
 - Multilingual support (English/Norwegian/German)
-- Two export options (with or without today line)
+- Two export options (with or without NOW indicator line)
 
 ## Requirements
 
@@ -31,7 +31,7 @@ Examples with and without "TODAY" indicator
 
 1. Navigate to any project
 2. Open the project dropdown menu
-3. Select "Export Gantt Chart" or "Export Gantt Chart (No Today Line)"
+3. Select "Export Gantt Chart" or "Export Gantt Chart (No NOW Indicator)"
 4. Use browser print function (Ctrl+P) → Save as PDF → Landscape orientation → Enable "Background Graphics"
 
 ## Export Includes
@@ -56,9 +56,9 @@ Examples with and without "TODAY" indicator
 
   Improvements:
   - Fixed date marker spacing to ensure exactly one day gaps between consecutive dates
-  - Added toggleable today line with two export options (with/without today indicator)
+  - Added toggleable NOW line with two export options (with/without NOW indicator)
   - Extended timeline with visual padding after end date for better appearance
-  - Improved today line positioning to prevent overlap with text labels
+  - Improved NOW line positioning to prevent overlap with text labels
   - Added dynamic line height calculation that adapts to number of tasks
   - Enhanced date calculations for consistent positioning across all timeline elements
 
@@ -66,7 +66,7 @@ Examples with and without "TODAY" indicator
   - Corrected end date positioning and duplicate date labels
   - Added JavaScript for responsive line height adjustment
 
-  The main focus was fixing visual spacing issues and adding functionality to export with or without a today indactor line.
+  The main focus was fixing visual spacing issues and adding functionality to export with or without a NOW indactor line.
 
 
 ## Changelog v1.1.0 → v1.1.1
