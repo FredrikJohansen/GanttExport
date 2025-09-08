@@ -83,6 +83,7 @@ Examples with and without "TODAY" indicator
   - Changed "Today" to "NOW" indicator throughout the interface (more accurate description)
   - Added German language support
   - Added totals footer row showing total estimated hours, time spent, and duration
+
   Fixes:
   - Fixed time spent calculation (was always showing 0)
   - Improved task bar end position alignment
