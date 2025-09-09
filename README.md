@@ -49,7 +49,7 @@ Examples with and without "NOW" indicator
 
 ## Version
 
-1.1.1
+1.2.0
 
 
 ## Changelog v1.0.0 → v1.1.0
